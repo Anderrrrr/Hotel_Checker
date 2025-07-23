@@ -4,3 +4,4 @@ __pycache__/
 
 # 忽略環境設定檔
 .env
+.silent_runner.vbs
