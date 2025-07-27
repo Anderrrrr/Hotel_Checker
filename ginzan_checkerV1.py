@@ -7,9 +7,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 # === 設定區 ===
-WEBHOOK_URL = "https://discord.com/api/webhooks/1393843377170288700/l7iwgH95a0PdIFM5QSL2RchuWV4S3hDMomuY-xmY88BVbSlUwUjN9Tjy4ohz8P7mBsik" # this is currently my discord hook
-CHECK_START = "2025-12-10" #start day
-CHECK_END = "2025-12-12"  #end day
+WEBHOOK_URL = "https://discord.com/api/webhooks/1393843377170288700/l7iwgH95a0PdIFM5QSL2RchuWV4S3hDMomuY-xmY88BVbSlUwUjN9Tjy4ohz8P7mBsik"
+CHECK_START = "2025-12-10"
+CHECK_END = "2025-12-12"
 
 HOTELS = [
     {
@@ -31,7 +31,6 @@ HOTELS = [
         "reserve_link": "https://reserve.489ban.net/client/notoyaryokan/4/plan/search?date={date}&roomCount=1"
     }
 ]
-
 
 def scroll_until_all_months_loaded(driver, start_date, end_date):
     wait = WebDriverWait(driver, 5)
@@ -91,7 +90,6 @@ def get_available_dates(driver, start_date, end_date):
                     if not icons:
                         continue
 
-                    # 取出年月日
                     ym_header = driver.find_element(By.ID, f"yearMonth_{table_idx}")
                     ym = ym_header.text.strip()
                     year = int(ym.split("年")[0])
@@ -124,25 +122,33 @@ def send_discord_message(hotel_name, reserve_link_template, dates):
     except Exception as e:
         print(f"[ERROR] Discord 傳送失敗：{e}")
 
-# === 主程式 ===
+def check_hotel(hotel, s_date, e_date):
+    print(f"[INFO] 🏨 正在檢查：{hotel['name']}")
+    options = uc.ChromeOptions()
+    options.headless = True
+    driver = uc.Chrome(options=options)
+
+    try:
+        driver.get(hotel["base_url"])
+        WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.ID, "availabilityCalendar_0"))
+        )
+        dates = get_available_dates(driver, s_date, e_date)
+    except Exception as e:
+        print(f"[ERROR] {hotel['name']} 載入錯誤：{e}")
+        dates = []
+    finally:
+        driver.quit()
+
+    if not dates:
+        print(f"[INFO] ❌ 沒有空房：{hotel['name']}（{CHECK_START} 至 {CHECK_END}）")
+    else:
+        send_discord_message(hotel["name"], hotel["reserve_link"], dates)
+
 # === 主程式 ===
 if __name__ == "__main__":
     s_date = datetime.strptime(CHECK_START, "%Y-%m-%d")
     e_date = datetime.strptime(CHECK_END, "%Y-%m-%d")
 
     for hotel in HOTELS:
-        print(f"[INFO] 🏨 正在檢查：{hotel['name']}")
-        options = uc.ChromeOptions()
-        options.headless = True
-        driver = uc.Chrome(options=options)
-        driver.get(hotel["base_url"])
-        time.sleep(4)
-
-        dates = get_available_dates(driver, s_date, e_date)
-        driver.quit()
-
-        if not dates:
-            print(f"[INFO] ❌ 沒有空房：{hotel['name']}（{CHECK_START} 至 {CHECK_END}）")
-        else:
-            send_discord_message(hotel["name"], hotel["reserve_link"], dates)
-
+        check_hotel(hotel, s_date, e_date)
