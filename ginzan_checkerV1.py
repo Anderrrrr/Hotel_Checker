@@ -8,8 +8,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 # === 設定區 ===
 WEBHOOK_URL = "https://discord.com/api/webhooks/1393843377170288700/l7iwgH95a0PdIFM5QSL2RchuWV4S3hDMomuY-xmY88BVbSlUwUjN9Tjy4ohz8P7mBsik"
-CHECK_START = "2025-12-10"
-CHECK_END = "2025-12-12"
+CHECK_START = "2026-02-14"
+CHECK_END = "2026-02-22"
 
 HOTELS = [
     {
